@@ -126,7 +126,33 @@ public class CommitAndPushController {
         // 在拉取一个仓库时，必须init一个仓库，默认main分支，暂时不允许选择分支
 
         gitService.pull(userName + "/" + repoName + "/" + branchName, repo.getPath());
+
         return R.success("拉取成功！");
     }
 
+    @PostMapping("/clone")
+    public R<String> clone(@PathVariable String userName,@PathVariable String repoName,
+                           @PathVariable String branchName, @RequestBody Repo repo, HttpSession session) throws SftpException {
+        // 在拉取一个仓库时，必须init一个仓库，默认main分支，暂时不允许选择分支
+
+        gitService.pull(userName + "/" + repoName + "/" + branchName, repo.getPath());
+        gitService.pull(userName + "/" + repoName + "/" + ".git", repo.getPath() + File.separator + ".git");
+        return R.success("拉取成功！");
+    }
+
+    @PostMapping("/merge")
+    public R<String> merge(@PathVariable String userName,@PathVariable String repoName,
+    @PathVariable String branchName, @RequestBody String mergeToBranchName, HttpSession session) {
+
+        LambdaQueryWrapper<User> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.eq(User::getAccountName, userName);
+        User user = userService.getOne(queryWrapper);
+
+        LambdaQueryWrapper<Repo> queryWrapper1 = new LambdaQueryWrapper<>();
+        queryWrapper1.eq(Repo::getName, repoName).eq(Repo::getAuthorId, user.getId());
+        Repo repo = repoService.getOne(queryWrapper1);
+
+
+        return R.success("拉取成功！");
+    }
 }

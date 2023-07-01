@@ -169,6 +169,7 @@ public class GitService {
 
     public void push(String repoPath,  String userName, String repoName, String branchName){
         uploadService.uploadFile(repoPath, userName, repoName, branchName);
+        uploadService.uploadGitFile(repoPath, userName, repoName);
     }
 
     public void pull(String path, String repoPath) throws SftpException {
@@ -198,6 +199,13 @@ public class GitService {
         }
 
         if(commitTreeMap == null){
+            return resultMap;
+        }
+
+        if(indexMap == null){
+            for (String path : commitTreeMap.keySet()) {
+                resultMap.put(path, 2);
+            }
             return resultMap;
         }
 

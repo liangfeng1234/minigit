@@ -105,6 +105,26 @@ public class UploadService {
         return false;
     }
 
+    public boolean uploadGitFile(String repoPath, String userName, String repoName){
+        try{
+            //建立连接
+            if (channelSftp == null || !channelSftp.isConnected()) {
+                channelSftp=createSFTPClient();
+            }
+            String remoteGitPath = REMOTE_REPO_PATH + "/"+ userName + "/" + repoName +
+                    "/.minigit";
+            String localGitPath = repoPath + "/.minigit";
+
+            deleteDirectory(remoteGitPath, channelSftp);
+            createDir(remoteGitPath);
+            uploadFile(channelSftp, localGitPath, remoteGitPath);
+        }catch(Exception e){
+            e.printStackTrace();
+            close();
+        }
+        return false;
+    }
+
     /**
      * 在远程服务器上递归创建目录
      * @param dirPath 目录路径，格式为"dir1/dir2/dir3"

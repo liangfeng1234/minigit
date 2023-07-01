@@ -45,8 +45,8 @@ public class BranchController {
         branch.setCommitHash(sourceBranch.getCommitHash());
         branchService.save(branch);
         String remoteRepoPath = uploadService.REMOTE_REPO_PATH+ "/" + userName + "/" + repoName;
-        uploadService.copyDirectory(repoPath, remoteRepoPath + "/" + sourceBranch.getName(),
-                remoteRepoPath + "/" + branchName);
+        // uploadService.copyDirectory(repoPath, remoteRepoPath + "/" + sourceBranch.getName(),
+        //        remoteRepoPath + "/" + branchName);
         return R.success(branch);
     }
 
