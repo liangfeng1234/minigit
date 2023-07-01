@@ -91,7 +91,8 @@ public class CommitAndPushController {
         LambdaQueryWrapper<Branch> queryWrapper2 = new LambdaQueryWrapper<>();
         queryWrapper2.eq(Branch::getRepoId,repo.getId()).eq(Branch::getName, branchName);
         Branch branch1 = branchService.getOne(queryWrapper2);
-
+        branch1.setCommitHash(commit.getHash());
+        branchService.update(branch1, queryWrapper2);
         commit.setBranchId(branch1.getId());
         commitService.save(commit);
         return R.success(commit);
@@ -136,7 +137,7 @@ public class CommitAndPushController {
         // 在拉取一个仓库时，必须init一个仓库，默认main分支，暂时不允许选择分支
 
         gitService.pull(userName + "/" + repoName + "/" + branchName, repo.getPath());
-        gitService.pull(userName + "/" + repoName + "/" + ".git", repo.getPath() + File.separator + ".git");
+        gitService.pull(userName + "/" + repoName + "/" + ".minigit", repo.getPath() + File.separator + ".minigit");
         return R.success("拉取成功！");
     }
 
@@ -154,5 +155,26 @@ public class CommitAndPushController {
 
 
         return R.success("拉取成功！");
+    }
+
+    @GetMapping("/checkout")
+    public void checkout(@PathVariable String userName, @PathVariable String repoName,@RequestParam String branchName,
+                              HttpSession session) throws Exception {
+        Long authorId = (Long) session.getAttribute("user");
+
+        LambdaQueryWrapper<User> queryWrapper1 = new LambdaQueryWrapper<>();
+        queryWrapper1.eq(User::getAccountName, userName);
+        User user = userService.getOne(queryWrapper1);
+
+        LambdaQueryWrapper<Repo> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.eq(Repo::getName,repoName).eq(Repo::getAuthorId, user.getId());
+        Repo repo = repoService.getOne(queryWrapper);
+        String repoPath = repo.getPath();
+
+        String commitHash = new String();
+        FileUtils.writeFileNoAppend(repoPath + File.separator + ".minigit" + File.separator + "refs" +
+                File.separator + "heads" + File.separator + branchName, commitHash);
+
+
     }
 }

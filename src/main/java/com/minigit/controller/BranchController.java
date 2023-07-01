@@ -10,11 +10,13 @@ import com.minigit.entityService.BranchService;
 import com.minigit.entityService.CommitService;
 import com.minigit.entityService.RepoService;
 import com.minigit.service.UploadService;
+import com.minigit.util.FileUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpSession;
+import java.io.File;
 import java.util.List;
 
 @Slf4j
@@ -42,11 +44,14 @@ public class BranchController {
         branch.setName(branchName);
         branch.setRepoId(sourceBranch.getRepoId());
         branch.setAuthorId(authorId);
-        branch.setCommitHash(sourceBranch.getCommitHash());
+        String commitHash = FileUtils.getCurrentCommitHash(repoPath);
+        branch.setCommitHash(commitHash);
         branchService.save(branch);
         String remoteRepoPath = uploadService.REMOTE_REPO_PATH+ "/" + userName + "/" + repoName;
-        // uploadService.copyDirectory(repoPath, remoteRepoPath + "/" + sourceBranch.getName(),
-        //        remoteRepoPath + "/" + branchName);
+        uploadService.copyDirectory(repoPath, remoteRepoPath + "/" + sourceBranch.getName(),
+                remoteRepoPath + "/" + branchName);
+        FileUtils.writeFile(repoPath + File.separator + ".minigit" + File.separator + "refs" +
+                File.separator + "heads" + File.separator + branchName, sourceBranch.getCommitHash());
         return R.success(branch);
     }
 
@@ -90,4 +95,6 @@ public class BranchController {
         }
         return R.success("删除成功！");
     }
+
+
 }
