@@ -81,6 +81,7 @@ public class BranchController {
 
         LambdaQueryWrapper<Branch> queryWrapper1 = new LambdaQueryWrapper<>();
         queryWrapper1.eq(Branch::getRepoId,repo.getId()).eq(Branch::getName, branchName);
+        branchService.remove(queryWrapper1);
         try {
             uploadService.deleteDirectory(uploadService.REMOTE_REPO_PATH + "/" + userName + "/" + repoName + "/" + branchName,
                     uploadService.getSFTPClient());

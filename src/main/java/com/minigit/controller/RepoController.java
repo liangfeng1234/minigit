@@ -7,8 +7,10 @@ import com.minigit.common.R;
 import com.minigit.entity.Branch;
 import com.minigit.entity.Repo;
 import com.minigit.entity.User;
+import com.minigit.entity.UserRepoRelation;
 import com.minigit.entityService.BranchService;
 import com.minigit.entityService.RepoService;
+import com.minigit.entityService.UserRepoRelationService;
 import com.minigit.entityService.UserService;
 import com.minigit.service.GitService;
 import com.minigit.service.UploadService;
@@ -36,6 +38,9 @@ public class RepoController {
     private GitService gitService;
     @Autowired
     private UploadService uploadService;
+
+    @Autowired
+    private UserRepoRelationService userRepoRelationService;
 
     /**
      * @param repo
@@ -96,6 +101,50 @@ public class RepoController {
     public R<Repo> updateRepo(@RequestBody Repo repo, HttpSession session){
 
         return null;
+    }
+
+    @PostMapping("/{repoName}/invite/{userName}")
+    public R<String> invite(@PathVariable String repoName,@PathVariable String userName, HttpSession session){
+        LambdaQueryWrapper<Repo> queryWrapper  = new LambdaQueryWrapper<>();
+        Long authorId = (Long) session.getAttribute("user");
+        queryWrapper.eq(Repo::getAuthorId, authorId).eq(Repo::getName, repoName);
+        Repo repo = repoService.getOne(queryWrapper);
+        Long repoId = repo.getId();
+
+        LambdaQueryWrapper<User> queryWrapper1 = new LambdaQueryWrapper<>();
+        queryWrapper1.eq(User::getAccountName, userName);
+        User user = userService.getOne(queryWrapper1);
+
+        UserRepoRelation userRepoRelation = new UserRepoRelation();
+        userRepoRelation.setRepoId(repoId);
+        userRepoRelation.setUserId(user.getId());
+
+        return R.success("成功发送邀请！");
+    }
+
+    @PostMapping
+    public R<String> acceptInvitation(@RequestBody UserRepoRelation userRepoRelation, HttpSession session){
+        LambdaQueryWrapper<UserRepoRelation> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.eq(UserRepoRelation::getUserId, userRepoRelation.getUserId()).eq(UserRepoRelation::getRepoId, userRepoRelation.getRepoId());
+
+        userRepoRelationService.remove(queryWrapper);
+
+        userRepoRelation.setIsAccept(true);
+
+        userRepoRelationService.save(userRepoRelation);
+
+        return R.success("接受邀请！");
+    }
+
+    @PostMapping
+    public R<List<UserRepoRelation>> getInvitation(HttpSession session){
+        Long userId = (Long) session.getAttribute("user");
+        LambdaQueryWrapper<UserRepoRelation> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.eq(UserRepoRelation::getUserId, userId).eq(UserRepoRelation::getIsAccept, 0);
+
+        List<UserRepoRelation> list = userRepoRelationService.list(queryWrapper);
+
+        return R.success(list);
     }
 
 }
