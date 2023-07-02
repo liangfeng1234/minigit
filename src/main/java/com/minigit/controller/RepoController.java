@@ -77,6 +77,17 @@ public class RepoController {
         queryWrapper1.eq(Repo::getAuthorId, id);
         List<Repo> list = repoService.list(queryWrapper1);
 
+        LambdaQueryWrapper<UserRepoRelation> queryWrapper2 = new LambdaQueryWrapper<>();
+        queryWrapper2.eq(UserRepoRelation::getUserId, user0.getId()).eq(UserRepoRelation::getIsAccept, 1);
+        // 得到本user的被邀请且接受的仓库
+        List<UserRepoRelation> list1 = userRepoRelationService.list(queryWrapper2);
+        for (UserRepoRelation userRepoRelation : list1) {
+            // 把每个仓库取出来
+            LambdaQueryWrapper<Repo> queryWrapper3 = new LambdaQueryWrapper<>();
+            queryWrapper3.eq(Repo::getId, userRepoRelation.getRepoId());
+            Repo repo = repoService.getOne(queryWrapper3);
+            list.add(repo);
+        }
 
         return R.success(list);
     }
