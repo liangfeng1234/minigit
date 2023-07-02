@@ -39,6 +39,9 @@ public class BackService {
     public Map<String,String> getDeleteMap(Map<String, String> currentCommitTreeMap,
                                                   Map<String, String> oldCommitTreeMap){
         Map<String, String> deleteMap = new HashMap<>();
+        if(currentCommitTreeMap == null){
+            return deleteMap;
+        }
         for (String path : currentCommitTreeMap.keySet()) {
             // 如果老版本的commitTree中没有某个文件，则加入deleteMap，之后从实际目录中删除它
             if(!oldCommitTreeMap.containsKey(path)){

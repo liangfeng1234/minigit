@@ -120,7 +120,7 @@ public class RepoController {
         userRepoRelation.setRepoId(repoId);
         userRepoRelation.setUserId(user.getId());
 
-        return R.success("成功发送邀请！");
+        return R.success("发送邀请成功！");
     }
 
     @PostMapping("/{repoName}/invite/accept")

@@ -51,7 +51,7 @@ public class BranchController {
         uploadService.copyDirectory(repoPath, remoteRepoPath + "/" + sourceBranch.getName(),
                 remoteRepoPath + "/" + branchName);
         FileUtils.writeFile(repoPath + File.separator + ".minigit" + File.separator + "refs" +
-                File.separator + "heads" + File.separator + branchName, sourceBranch.getCommitHash());
+                File.separator + "heads" + File.separator + branchName, commitHash);
         return R.success(branch);
     }
 

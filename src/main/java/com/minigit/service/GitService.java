@@ -233,4 +233,74 @@ public class GitService {
         }
         return resultMap;
     }
+
+    public void checkout(String branchName, String repoPath){
+
+        // 当前版本的commitHash
+        String currentCommitHash = FileUtils.getCurrentCommitHash(repoPath);
+
+        try {
+            FileUtils.writeFileNoAppend(repoPath + File.separator + ".minigit" + File.separator + "HEAD", branchName);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        //
+        String checkedCommitHash = FileUtils.getCurrentCommitHash(repoPath);
+
+        Map<String, String> currentCommitTreeMap = backService.getOldCommitTree(currentCommitHash, repoPath);
+        System.out.println(currentCommitHash);
+        System.out.println("currentCommitTreeMap:" + currentCommitTreeMap);
+
+        Map<String, String> checkedCommitTreeMap = backService.getOldCommitTree(checkedCommitHash,repoPath);
+        System.out.println(checkedCommitHash);
+        System.out.println("checkedCommitHash:" + checkedCommitTreeMap);
+        Map<String, String> fileMap = backService.getFileMap(repoPath);
+        Map<String, String> deleteMap = backService.getDeleteMap(currentCommitTreeMap, checkedCommitTreeMap);
+        Map<String, String> createMap = backService.getCreateMap(currentCommitTreeMap, checkedCommitTreeMap);
+        System.out.println("deletemap:" + deleteMap);
+        System.out.println("createMap:" + createMap);
+        System.out.println("fileMap:" + fileMap);
+        for (String path : deleteMap.keySet()) {
+            if(fileMap.containsKey(path)){
+                new File(path).delete();
+            }
+        }
+        for (String path: createMap.keySet()){
+            if(!fileMap.containsKey(path)){
+                try {
+                    FileUtils.createFile(path);
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        }
+        for (String path : checkedCommitTreeMap.keySet()) {
+            String currentHash = Sha1Utils.calculateFileSha1(new File(path));
+            String oldhash = checkedCommitTreeMap.get(path);
+            if(oldhash != currentHash){
+                File objectFile = FileUtils.getObjectFile(oldhash,repoPath);
+                try {
+                    String content = FileUtils.readFile(objectFile.getAbsolutePath());
+                    FileUtils.writeFileNoAppend(path, content);
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        }
+        // 删除缓冲区的内容
+        try {
+            FileUtils.deleteFileOrDirectory(repoPath + File.separator + ".minigit" + File.separator + "INDEX");
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
+    }
+    public void merge(String branchName, String mergeToBranchName, String repoPath) throws IOException {
+        String currentCommitHash = FileUtils.getCurrentCommitHash(repoPath);
+        FileUtils.writeFileNoAppend(repoPath + File.separator + ".minigit" + File.separator + "refs" + File.separator + "heads" +
+                File.separator + mergeToBranchName, currentCommitHash);
+        FileUtils.deleteFileOrDirectory(repoPath + File.separator + ".minigit" + File.separator + "refs" + File.separator + "heads" +
+                File.separator + branchName);
+        FileUtils.writeFileNoAppend(repoPath + File.separator + ".minigit" + File.separator + "HEAD", mergeToBranchName);
+    }
 }

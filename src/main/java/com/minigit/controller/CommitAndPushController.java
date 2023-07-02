@@ -11,16 +11,19 @@ import com.minigit.entityService.BranchService;
 import com.minigit.entityService.CommitService;
 import com.minigit.entityService.RepoService;
 import com.minigit.entityService.UserService;
+import com.minigit.mapper.BranchMapper;
 import com.minigit.service.BackService;
 import com.minigit.service.CommitUtilService;
 import com.minigit.service.GitService;
 import com.minigit.util.FileUtils;
+import com.minigit.util.Sha1Utils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpSession;
 import java.io.File;
+import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.List;
@@ -133,17 +136,20 @@ public class CommitAndPushController {
 
     @PostMapping("/clone")
     public R<String> clone(@PathVariable String userName,@PathVariable String repoName,
-                           @PathVariable String branchName, @RequestBody Repo repo, HttpSession session) throws SftpException {
+                           @PathVariable String branchName, @RequestBody String repoPath, HttpSession session) throws SftpException {
         // 在拉取一个仓库时，必须init一个仓库，默认main分支，暂时不允许选择分支
 
-        gitService.pull(userName + "/" + repoName + "/" + branchName, repo.getPath());
-        gitService.pull(userName + "/" + repoName + "/" + ".minigit", repo.getPath() + File.separator + ".minigit");
+        gitService.pull(userName + "/" + repoName + "/" + branchName, repoPath);
+        gitService.pull(userName + "/" + repoName + "/" + ".minigit", repoPath + File.separator + ".minigit");
         return R.success("拉取成功！");
     }
 
-    @PostMapping("/merge")
+    @Autowired
+    private BranchMapper branchMapper;
+
+    @PostMapping("/merge/{mergeTo}")
     public R<String> merge(@PathVariable String userName,@PathVariable String repoName,
-    @PathVariable String branchName, @RequestBody String mergeToBranchName, HttpSession session) {
+    @PathVariable String branchName, @PathVariable String mergeTo, HttpSession session) throws IOException {
 
         LambdaQueryWrapper<User> queryWrapper = new LambdaQueryWrapper<>();
         queryWrapper.eq(User::getAccountName, userName);
@@ -153,15 +159,32 @@ public class CommitAndPushController {
         queryWrapper1.eq(Repo::getName, repoName).eq(Repo::getAuthorId, user.getId());
         Repo repo = repoService.getOne(queryWrapper1);
 
+        gitService.merge(branchName,mergeTo, repo.getPath());
 
+        LambdaQueryWrapper<Branch> queryWrapper2 = new LambdaQueryWrapper<>();
+        queryWrapper2.eq(Branch::getRepoId, repo.getId()).eq(Branch::getName, branchName);
+        Branch branch = branchService.getOne(queryWrapper2);
+
+        LambdaQueryWrapper<Branch> queryWrapper5 = new LambdaQueryWrapper<>();
+        queryWrapper5.eq(Branch::getRepoId, repo.getId()).eq(Branch::getName, mergeTo);
+        Branch mergeToBranch = branchService.getOne(queryWrapper5);
+
+        LambdaQueryWrapper<Commit> queryWrapper3 = new LambdaQueryWrapper<>();
+        queryWrapper3.eq(Commit::getBranchId, branch.getId());
+        List<Commit> list = commitService.list(queryWrapper3);
+        for (Commit commit : list) {
+            commit.setBranchId(mergeToBranch.getId());
+        }
+        commitService.updateBatchById(list);
+        
+        branchService.remove(queryWrapper2);
         return R.success("拉取成功！");
     }
 
-    @GetMapping("/checkout")
-    public void checkout(@PathVariable String userName, @PathVariable String repoName,@RequestParam String branchName,
+    @PostMapping("/checkout")
+    public R<String> checkout(@PathVariable String userName, @PathVariable String repoName,@PathVariable String branchName,
                               HttpSession session) throws Exception {
         Long authorId = (Long) session.getAttribute("user");
-
         LambdaQueryWrapper<User> queryWrapper1 = new LambdaQueryWrapper<>();
         queryWrapper1.eq(User::getAccountName, userName);
         User user = userService.getOne(queryWrapper1);
@@ -171,10 +194,11 @@ public class CommitAndPushController {
         Repo repo = repoService.getOne(queryWrapper);
         String repoPath = repo.getPath();
 
-        String commitHash = new String();
-        FileUtils.writeFileNoAppend(repoPath + File.separator + ".minigit" + File.separator + "refs" +
-                File.separator + "heads" + File.separator + branchName, commitHash);
 
 
+        gitService.checkout(branchName,repoPath);
+        return R.success("checkout成功！");
     }
+
+
 }
