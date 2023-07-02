@@ -76,6 +76,8 @@ public class RepoController {
         LambdaQueryWrapper<Repo> queryWrapper1 = new LambdaQueryWrapper<>();
         queryWrapper1.eq(Repo::getAuthorId, id);
         List<Repo> list = repoService.list(queryWrapper1);
+
+
         return R.success(list);
     }
 
@@ -147,7 +149,7 @@ public class RepoController {
         return R.success("拒绝邀请！");
     }
 
-    @PostMapping
+    @PostMapping("/{repoName}/invite")
     public R<List<String>> getInvitation(HttpSession session){
         Long userId = (Long) session.getAttribute("user");
         LambdaQueryWrapper<UserRepoRelation> queryWrapper = new LambdaQueryWrapper<>();

@@ -176,7 +176,7 @@ public class CommitAndPushController {
             commit.setBranchId(mergeToBranch.getId());
         }
         commitService.updateBatchById(list);
-        
+
         branchService.remove(queryWrapper2);
         return R.success("拉取成功！");
     }
