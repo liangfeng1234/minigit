@@ -125,12 +125,14 @@ public class RepoController {
         Repo repo = repoService.getOne(queryWrapper);
         Long repoId = repo.getId();
 
+        // 找到邀请人的userId
         LambdaQueryWrapper<User> queryWrapper1 = new LambdaQueryWrapper<>();
-        queryWrapper1.eq(User::getAccountName, userName);
+        queryWrapper1.eq(User::getAccountName, partnerName);
         User user = userService.getOne(queryWrapper1);
 
         UserRepoRelation userRepoRelation = new UserRepoRelation();
         userRepoRelation.setRepoId(repoId);
+
         userRepoRelation.setUserId(user.getId());
         userRepoRelationService.save(userRepoRelation);
         return R.success("发送邀请成功！");
@@ -150,14 +152,20 @@ public class RepoController {
 
 
         LambdaQueryWrapper<UserRepoRelation> queryWrapper = new LambdaQueryWrapper<>();
-        queryWrapper.eq(UserRepoRelation::getAuthorId, UserId).eq(UserRepoRelation::getRepoId, repo.getId());
+        queryWrapper.eq(UserRepoRelation::getUserId, UserId).eq(UserRepoRelation::getRepoId, repo.getId());
 
-
-        userRepoRelationService.remove(queryWrapper);
-
+        UserRepoRelation userRepoRelation = userRepoRelationService.getOne(queryWrapper);
         userRepoRelation.setIsAccept(true);
 
-        userRepoRelationService.save(userRepoRelation);
+        /*userRepoRelationService.remove(queryWrapper);
+
+        UserRepoRelation userRepoRelation = new UserRepoRelation();
+        userRepoRelation.setRepoId(repo.getId());
+
+        userRepoRelation.setUserId(UserId);
+        userRepoRelation.setIsAccept(true);
+
+        userRepoRelationService.save(userRepoRelation);*/
 
         return R.success("接受邀请！");
     }
