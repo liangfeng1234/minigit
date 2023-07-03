@@ -43,6 +43,7 @@ public class RepoController {
     @Autowired
     private UserRepoRelationService userRepoRelationService;
 
+
     /**
      * @param repo
      * @param session
@@ -118,31 +119,48 @@ public class RepoController {
     }
 
     @PostMapping("/{repoName}/invite/{partnerName}")
-    public R<String> invite(@PathVariable String repoName,@PathVariable String partnerName, HttpSession session){
+    public R<String> invite(@PathVariable String userName, @PathVariable String repoName,@PathVariable String partnerName, HttpSession session){
         LambdaQueryWrapper<Repo> queryWrapper  = new LambdaQueryWrapper<>();
         Long authorId = (Long) session.getAttribute("user");
         queryWrapper.eq(Repo::getAuthorId, authorId).eq(Repo::getName, repoName);
         Repo repo = repoService.getOne(queryWrapper);
         Long repoId = repo.getId();
 
+        // 找到被邀请人的userId
         LambdaQueryWrapper<User> queryWrapper1 = new LambdaQueryWrapper<>();
         queryWrapper1.eq(User::getAccountName, partnerName);
         User user = userService.getOne(queryWrapper1);
 
         UserRepoRelation userRepoRelation = new UserRepoRelation();
         userRepoRelation.setRepoId(repoId);
-        userRepoRelation.setUserId(user.getId());
 
+        userRepoRelation.setUserId(user.getId());
+        userRepoRelationService.save(userRepoRelation);
         return R.success("发送邀请成功！");
     }
 
     @PostMapping("/{repoName}/invite/accept")
-    public R<String> acceptInvitation(@RequestBody UserRepoRelation userRepoRelation, HttpSession session){
+    public R<String> acceptInvitation(@PathVariable String userName, @PathVariable String repoName, HttpSession session){
+        Long UserId = (Long) session.getAttribute("user");
+
+        LambdaQueryWrapper<User> queryWrapper1 = new LambdaQueryWrapper<>();
+        queryWrapper1.eq(User::getAccountName, userName);
+        User user = userService.getOne(queryWrapper1);
+
+        LambdaQueryWrapper<Repo> queryWrapper2 = new LambdaQueryWrapper<>();
+        queryWrapper2.eq(Repo::getAuthorId, user.getId()).eq(Repo::getName, repoName);
+        Repo repo = repoService.getOne(queryWrapper2);
+
+
         LambdaQueryWrapper<UserRepoRelation> queryWrapper = new LambdaQueryWrapper<>();
-        queryWrapper.eq(UserRepoRelation::getUserId, userRepoRelation.getUserId()).eq(UserRepoRelation::getRepoId, userRepoRelation.getRepoId());
+        queryWrapper.eq(UserRepoRelation::getUserId, UserId).eq(UserRepoRelation::getRepoId, repo.getId());
 
         userRepoRelationService.remove(queryWrapper);
 
+        UserRepoRelation userRepoRelation = new UserRepoRelation();
+        userRepoRelation.setRepoId(repo.getId());
+
+        userRepoRelation.setUserId(UserId);
         userRepoRelation.setIsAccept(true);
 
         userRepoRelationService.save(userRepoRelation);
@@ -151,11 +169,11 @@ public class RepoController {
     }
 
     @PostMapping("/{repoName}/invite/reject")
-    public R<String> rejectInvitation(@RequestBody UserRepoRelation userRepoRelation, HttpSession session){
-        LambdaQueryWrapper<UserRepoRelation> queryWrapper = new LambdaQueryWrapper<>();
+    public R<String> rejectInvitation(@PathVariable String userName, @PathVariable String repoName, HttpSession session){
+        /*LambdaQueryWrapper<UserRepoRelation> queryWrapper = new LambdaQueryWrapper<>();
         queryWrapper.eq(UserRepoRelation::getUserId, userRepoRelation.getUserId()).eq(UserRepoRelation::getRepoId, userRepoRelation.getRepoId());
 
-        userRepoRelationService.remove(queryWrapper);
+        userRepoRelationService.remove(queryWrapper);*/
 
         return R.success("拒绝邀请！");
     }
@@ -171,13 +189,17 @@ public class RepoController {
         List<String> result = new ArrayList<>();
 
         for (UserRepoRelation userRepoRelation : list) {
-            LambdaQueryWrapper<User> queryWrapper1 = new LambdaQueryWrapper<>();
-            queryWrapper1.eq(User::getId, userRepoRelation.getUserId());
-            User user = userService.getOne(queryWrapper1);
+
 
             LambdaQueryWrapper<Repo> queryWrapper2 = new LambdaQueryWrapper<>();
             queryWrapper2.eq(Repo::getId, userRepoRelation.getRepoId());
             Repo repo = repoService.getOne(queryWrapper2);
+
+            LambdaQueryWrapper<User> queryWrapper1 = new LambdaQueryWrapper<>();
+            queryWrapper1.eq(User::getId, repo.getAuthorId());
+            User user = userService.getOne(queryWrapper1);
+
+
             result.add(user.getAccountName() + "\t" + repo.getName());
         }
 
