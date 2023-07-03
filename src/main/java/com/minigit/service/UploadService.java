@@ -111,10 +111,12 @@ public class UploadService {
             if (channelSftp == null || !channelSftp.isConnected()) {
                 channelSftp=createSFTPClient();
             }
+
             String remoteGitPath = REMOTE_REPO_PATH + "/"+ userName + "/" + repoName +
                     "/.minigit";
             String localGitPath = repoPath + "/.minigit";
-
+            System.out.println(remoteGitPath);
+            System.out.println(localGitPath);
             deleteDirectory(remoteGitPath, channelSftp);
             createDir(remoteGitPath);
             uploadFile(channelSftp, localGitPath, remoteGitPath);
@@ -235,6 +237,8 @@ public class UploadService {
         }
 
         String remotePath = REMOTE_REPO_PATH + "/" + path;
+        System.out.println(REMOTE_REPO_PATH);
+        System.out.println(remotePath);
         // 递归下载目录下的所有文件
         Vector<ChannelSftp.LsEntry> fileList = channelSftp.ls(remotePath);
         File localFile = new File(localPath);

@@ -17,6 +17,7 @@ import com.minigit.service.CommitUtilService;
 import com.minigit.service.GitService;
 import com.minigit.util.FileUtils;
 import com.minigit.util.Sha1Utils;
+import com.minigit.util.StringRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -120,6 +121,7 @@ public class CommitAndPushController {
         Long authorId = (Long) session.getAttribute("user");
         queryWrapper.eq(Repo::getAuthorId, authorId).eq(Repo::getName,repoName);
         Repo repo = repoService.getOne(queryWrapper);
+        System.out.println(repo.getPath());
         gitService.push(repo.getPath(), userName, repoName, branchName);
         return R.success("推送成功！");
     }
@@ -135,10 +137,11 @@ public class CommitAndPushController {
     }
 
     @PostMapping("/clone")
-    public R<String> clone(@PathVariable String userName,@PathVariable String repoName,
-                           @PathVariable String branchName, @RequestBody String repoPath, HttpSession session) throws SftpException {
+    public R<String> clone(@PathVariable String userName, @PathVariable String repoName,
+                           @PathVariable String branchName, @RequestBody StringRequest request, HttpSession session) throws SftpException {
         // 在拉取一个仓库时，必须init一个仓库，默认main分支，暂时不允许选择分支
-
+        String repoPath = request.getRepoPath();
+        System.out.println(repoPath);
         gitService.pull(userName + "/" + repoName + "/" + branchName, repoPath);
         gitService.pull(userName + "/" + repoName + "/" + ".minigit", repoPath + File.separator + ".minigit");
         return R.success("拉取成功！");
@@ -202,3 +205,5 @@ public class CommitAndPushController {
 
 
 }
+
+
