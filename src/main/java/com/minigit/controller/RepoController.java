@@ -163,11 +163,11 @@ public class RepoController {
     }
 
     @PostMapping("/{repoName}/invite/reject")
-    public R<String> rejectInvitation(@RequestBody UserRepoRelation userRepoRelation, HttpSession session){
-        LambdaQueryWrapper<UserRepoRelation> queryWrapper = new LambdaQueryWrapper<>();
+    public R<String> rejectInvitation(@PathVariable String userName, @PathVariable String repoName, HttpSession session){
+        /*LambdaQueryWrapper<UserRepoRelation> queryWrapper = new LambdaQueryWrapper<>();
         queryWrapper.eq(UserRepoRelation::getUserId, userRepoRelation.getUserId()).eq(UserRepoRelation::getRepoId, userRepoRelation.getRepoId());
 
-        userRepoRelationService.remove(queryWrapper);
+        userRepoRelationService.remove(queryWrapper);*/
 
         return R.success("拒绝邀请！");
     }
