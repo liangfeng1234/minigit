@@ -43,6 +43,7 @@ public class RepoController {
     @Autowired
     private UserRepoRelationService userRepoRelationService;
 
+
     /**
      * @param repo
      * @param session
@@ -154,10 +155,7 @@ public class RepoController {
         LambdaQueryWrapper<UserRepoRelation> queryWrapper = new LambdaQueryWrapper<>();
         queryWrapper.eq(UserRepoRelation::getUserId, UserId).eq(UserRepoRelation::getRepoId, repo.getId());
 
-        UserRepoRelation userRepoRelation = userRepoRelationService.getOne(queryWrapper);
-        userRepoRelation.setIsAccept(true);
-
-        /*userRepoRelationService.remove(queryWrapper);
+        userRepoRelationService.remove(queryWrapper);
 
         UserRepoRelation userRepoRelation = new UserRepoRelation();
         userRepoRelation.setRepoId(repo.getId());
@@ -165,7 +163,7 @@ public class RepoController {
         userRepoRelation.setUserId(UserId);
         userRepoRelation.setIsAccept(true);
 
-        userRepoRelationService.save(userRepoRelation);*/
+        userRepoRelationService.save(userRepoRelation);
 
         return R.success("接受邀请！");
     }
