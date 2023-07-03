@@ -137,9 +137,21 @@ public class RepoController {
     }
 
     @PostMapping("/{repoName}/invite/accept")
-    public R<String> acceptInvitation(HttpSession session){
+    public R<String> acceptInvitation(@PathVariable String userName, @PathVariable String repoName, Session session){
+        Long UserId = (Long) session.getAttribute("user");
+
+        LambdaQueryWrapper<User> queryWrapper1 = new LambdaQueryWrapper<>();
+        queryWrapper1.eq(User::getAccountName(), userName);
+        User user = userService.getOne(queryWrapper1);
+
+        LambdaQueryWrapper<Repo> queryWrapper2 = new LambdaQueryWrapper<>();
+        queryWrapper2.eq(Repo::getUserId(), user.getId()).eq(Repo::getName(), repoName);
+        Repo repo = repoService.getOne(queryWrapper2);
+
+
         LambdaQueryWrapper<UserRepoRelation> queryWrapper = new LambdaQueryWrapper<>();
-        queryWrapper.eq(UserRepoRelation::getUserId, userRepoRelation.getUserId()).eq(UserRepoRelation::getRepoId, userRepoRelation.getRepoId());
+        queryWrapper.eq(UserRepoRelation::getUserId, UserId).eq(UserRepoRelation::getRepoId, repo.getId());
+
 
         userRepoRelationService.remove(queryWrapper);
 
