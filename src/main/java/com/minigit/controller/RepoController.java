@@ -125,7 +125,7 @@ public class RepoController {
         Repo repo = repoService.getOne(queryWrapper);
         Long repoId = repo.getId();
 
-        // 找到邀请人的userId
+        // 找到被邀请人的userId
         LambdaQueryWrapper<User> queryWrapper1 = new LambdaQueryWrapper<>();
         queryWrapper1.eq(User::getAccountName, partnerName);
         User user = userService.getOne(queryWrapper1);
@@ -191,13 +191,17 @@ public class RepoController {
         List<String> result = new ArrayList<>();
 
         for (UserRepoRelation userRepoRelation : list) {
-            LambdaQueryWrapper<User> queryWrapper1 = new LambdaQueryWrapper<>();
-            queryWrapper1.eq(User::getId, userRepoRelation.getUserId());
-            User user = userService.getOne(queryWrapper1);
+
 
             LambdaQueryWrapper<Repo> queryWrapper2 = new LambdaQueryWrapper<>();
             queryWrapper2.eq(Repo::getId, userRepoRelation.getRepoId());
             Repo repo = repoService.getOne(queryWrapper2);
+
+            LambdaQueryWrapper<User> queryWrapper1 = new LambdaQueryWrapper<>();
+            queryWrapper1.eq(User::getId, repo.getAuthorId());
+            User user = userService.getOne(queryWrapper1);
+
+
             result.add(user.getAccountName() + "\t" + repo.getName());
         }
 
