@@ -130,10 +130,10 @@ public class RepoController {
         LambdaQueryWrapper<User> queryWrapper1 = new LambdaQueryWrapper<>();
         queryWrapper1.eq(User::getAccountName, partnerName);
         User user = userService.getOne(queryWrapper1);
-
+        System.out.println("发送邀请");
         UserRepoRelation userRepoRelation = new UserRepoRelation();
         userRepoRelation.setRepoId(repoId);
-
+        System.out.println("发送邀请");
         userRepoRelation.setUserId(user.getId());
         userRepoRelationService.save(userRepoRelation);
         return R.success("发送邀请成功！");

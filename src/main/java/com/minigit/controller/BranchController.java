@@ -3,12 +3,8 @@ package com.minigit.controller;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.jcraft.jsch.SftpException;
 import com.minigit.common.R;
-import com.minigit.entity.Branch;
-import com.minigit.entity.Commit;
-import com.minigit.entity.Repo;
-import com.minigit.entityService.BranchService;
-import com.minigit.entityService.CommitService;
-import com.minigit.entityService.RepoService;
+import com.minigit.entity.*;
+import com.minigit.entityService.*;
 import com.minigit.service.UploadService;
 import com.minigit.util.FileUtils;
 import lombok.extern.slf4j.Slf4j;
@@ -31,6 +27,11 @@ public class BranchController {
     private CommitService commitService;
     @Autowired
     private UploadService uploadService;
+
+    @Autowired
+    private UserService userService;
+    @Autowired
+    private UserRepoRelationService userRepoRelationService;
 
     @PostMapping("/add")
     public R<Branch> addBranch(@PathVariable String userName, @PathVariable String repoName,@RequestParam String branchName,
@@ -57,15 +58,37 @@ public class BranchController {
 
     @GetMapping("/branches")
     public R<List<Branch>> getAllBranches(@PathVariable String userName, @PathVariable String repoName,HttpSession session){
-        Long authorId = (Long) session.getAttribute("user");
-        LambdaQueryWrapper<Repo> queryWrapper = new LambdaQueryWrapper<>();
-        queryWrapper.eq(Repo::getAuthorId, authorId).eq(Repo::getName, repoName);
-        Repo repo = repoService.getOne(queryWrapper);
+        Long userId = (Long) session.getAttribute("user");
+        LambdaQueryWrapper<User> queryWrapper8 = new LambdaQueryWrapper<>();
+        queryWrapper8.eq(User::getAccountName, userName);
+        User user = userService.getOne(queryWrapper8);
+        if(user.getId() !=userId){
+            LambdaQueryWrapper<UserRepoRelation> queryWrapper3 = new LambdaQueryWrapper<>();
+            queryWrapper3.eq(UserRepoRelation::getUserId, user.getId()).eq(UserRepoRelation::getIsAccept, 1);
+            List<UserRepoRelation> list = userRepoRelationService.list(queryWrapper3);
+            for (UserRepoRelation userRepoRelation : list) {
+                LambdaQueryWrapper<Repo> queryWrapper5 = new LambdaQueryWrapper<>();
+                queryWrapper5.eq(Repo::getName, repoName);
+                Repo repo = repoService.getOne(queryWrapper5);
+                if(repo != null){
+                    LambdaQueryWrapper<Branch> queryWrapper7 = new LambdaQueryWrapper<>();
+                    queryWrapper7.eq(Branch::getRepoId,repo.getId());
+                    List<Branch> list1 = branchService.list(queryWrapper7);
+                    return R.success(list1);
+                }
+            }
+        }else{
+            Long authorId = (Long) session.getAttribute("user");
+            LambdaQueryWrapper<Repo> queryWrapper = new LambdaQueryWrapper<>();
+            queryWrapper.eq(Repo::getAuthorId, authorId).eq(Repo::getName, repoName);
+            Repo repo = repoService.getOne(queryWrapper);
 
-        LambdaQueryWrapper<Branch> queryWrapper1 = new LambdaQueryWrapper<>();
-        queryWrapper1.eq(Branch::getRepoId,repo.getId());
-        List<Branch> list = branchService.list(queryWrapper1);
-        return R.success(list);
+            LambdaQueryWrapper<Branch> queryWrapper1 = new LambdaQueryWrapper<>();
+            queryWrapper1.eq(Branch::getRepoId,repo.getId());
+            List<Branch> list = branchService.list(queryWrapper1);
+            return R.success(list);
+        }
+        return R.success(null);
     }
 
     @GetMapping("/{branchName}/commits")
